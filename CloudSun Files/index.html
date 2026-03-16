@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-image: url("https://bit.ly/4bcK1Hc");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    main {
+      background-color: rgba(227, 193, 173, 0.85);
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 90%;
+      max-width: 540px;
+      padding: 2em;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    #weather-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    #weather-search {
+      display: flex;
+      width: 100%;
+      justify-content: center;
+    }
+
+    #search {
+      border-radius: 5px 0 0 5px;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      width: 70%;
+      height: 42px;
+      outline: none;
+    }
+
+    #submit {
+      border-radius: 0 5px 5px 0;
+      border: none;
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      width: 30%;
+      height: 42px;
+      cursor: pointer;
+    }
+
+    #submit:hover {
+      background-color: #555;
+    }
+
+    #weather-data {
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 5px;
+      padding: 1.5em;
+      margin-top: 20px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #weather-data > img {
+      border-radius: 50%;
+      background-color: lightskyblue;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  
+  <main>
+    <section id="weather-wrapper">
+      <h1>Weather App</h1>
+      <div id="weather-search">
+        <input id="search" type="text" placeholder="Search by city" />
+        <input id="submit" type="button" onclick="fetchWeather()" value="Search" />
+      </div>
+      <div id="weather-data"></div>
+    </section>
+  </main>
+
+  <script>
+    async function fetchWeather() {
+      const searchInput = document.getElementById("search").value.trim();
+      const weatherDataSection = document.getElementById("weather-data");
+      
+      // DİKKAT: AŞAĞIDAKİ SATIRA KENDİ API ANAHTARINI YAPIŞTIR
+      const apiKey = "5e1039424df2900cd86cfa6ece350ccf"; 
+
+      weatherDataSection.style.display = "block";
+
+      if (searchInput === "") {
+        weatherDataSection.innerHTML = `
+        <div>
+          <h2>Empty Input!</h2>
+          <p>Please try again with a valid <u>city name</u>.</p>
+        </div>
+        `;
+        return;
+      }
+
+      document.getElementById("search").value = "";
+
+      try {
+        const geocodeURL = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(searchInput)}&limit=1&appid=${apiKey}`;
+        const geoResponse = await fetch(geocodeURL);
+        
+        if (!geoResponse.ok) {
+          console.log("Bad response from Geocoding API! ", geoResponse.status);
+          return;
+        }
+        
+        const geoData = await geoResponse.json();
+
+        if (geoData.length === 0) {
+          weatherDataSection.innerHTML = `
+          <div>
+            <h2>Invalid Input: "${searchInput}"</h2>
+            <p>Please try again with a valid <u>city name</u>.</p>
+          </div>
+          `;
+          return;
+        }
+
+        const lon = geoData[0].lon;
+        const lat = geoData[0].lat;
+
+        const weatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+        const weatherResponse = await fetch(weatherURL);
+
+        if (!weatherResponse.ok) {
+          console.log("Bad response from Weather API! ", weatherResponse.status);
+          return;
+        }
+
+        const weatherData = await weatherResponse.json();
+
+        weatherDataSection.style.display = "flex";
+        weatherDataSection.innerHTML = `
+        <img src="https://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png" alt="${weatherData.weather[0].description}" width="100" />
+        <div>
+          <h2>${weatherData.name}</h2>
+          <p><strong>Temperature:</strong> ${Math.round(weatherData.main.temp - 273.15)}°C</p>
+          <p><strong>Description:</strong> ${weatherData.weather[0].description}</p>
+        </div>
+        `;
+
+      } catch (error) {
+        console.error("Bir hata oluştu: ", error);
+      }
+    }
+  </script>
+</body>
+</html>
